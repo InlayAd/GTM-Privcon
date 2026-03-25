@@ -26,7 +26,13 @@ export interface OutreachResult {
   revenueImpact: string;
 }
 
-export async function generateOutreachAction(formData: BrandData): Promise<OutreachResult> {
+export interface ActionResponse {
+  success: boolean;
+  data?: OutreachResult;
+  error?: string;
+}
+
+export async function generateOutreachAction(formData: BrandData): Promise<ActionResponse> {
   const prompt = `You are a senior AEO (AI Engine Optimization) strategist preparing a high-stakes sales intelligence report. This report will be shared directly with the brand's founder/CMO to convince them to invest in your AEO services TODAY.
 
 CRITICAL: Use "Google Search" extensively to gather REAL data. Do NOT hallucinate any numbers.
@@ -123,7 +129,7 @@ export async function hasSavedKeyAction(): Promise<boolean> {
   return cookieStore.has(COOKIE_NAME);
 }
 
-async function generateWithGemini(prompt: string, customKey?: string): Promise<OutreachResult> {
+async function generateWithGemini(prompt: string, customKey?: string): Promise<ActionResponse> {
   let apiKey = customKey;
 
   // If no ephemeral key provided, try to get from session cookie
@@ -144,7 +150,9 @@ async function generateWithGemini(prompt: string, customKey?: string): Promise<O
   // Fallback to env default if still none
   apiKey = apiKey || DEFAULT_GEMINI_API_KEY;
   
-  if (!apiKey) throw new Error('Gemini API Key is missing. Please provide one in Settings.');
+  if (!apiKey) {
+    return { success: false, error: 'Gemini API Key is missing. Please provide one in Settings.' };
+  }
 
   const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
@@ -167,12 +175,12 @@ async function generateWithGemini(prompt: string, customKey?: string): Promise<O
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       if (response.status === 429) {
-        throw new Error('Gemini rate limit exceeded. Please try again later or provide your own API key in Settings.');
+        return { success: false, error: 'Gemini rate limit exceeded. Please try again later or provide your own API key in Settings.' };
       }
       if (response.status === 401 || response.status === 403) {
-        throw new Error('Invalid Gemini API Key. Please verify your key in Settings.');
+        return { success: false, error: 'Invalid Gemini API Key. Please verify your key in Settings.' };
       }
-      throw new Error(`Gemini API error: ${errorData.error?.message || response.statusText}`);
+      return { success: false, error: `Gemini API error: ${errorData.error?.message || response.statusText}` };
     }
 
     const data = await response.json();
@@ -180,7 +188,7 @@ async function generateWithGemini(prompt: string, customKey?: string): Promise<O
     // Gemini with grounding may return multiple parts — concatenate all text parts
     const parts = data.candidates?.[0]?.content?.parts;
     if (!parts || parts.length === 0) {
-      throw new Error('Gemini returned an empty response. This might happen if grounding failed or the content was filtered.');
+      return { success: false, error: 'Gemini returned an empty response. This might happen if grounding failed or the content was filtered.' };
     }
     
     const content = parts
@@ -189,12 +197,12 @@ async function generateWithGemini(prompt: string, customKey?: string): Promise<O
       .join('\n');
     
     if (!content) {
-      throw new Error('Gemini returned an empty response. This might happen if grounding failed or the content was filtered.');
+      return { success: false, error: 'Gemini returned an empty response. This might happen if grounding failed or the content was filtered.' };
     }
 
-    return parseAIResponse(content);
+    return { success: true, data: parseAIResponse(content) };
   } catch (error: any) {
-    throw new Error(error.message);
+    return { success: false, error: error.message || 'An unexpected error occurred during generation.' };
   }
 }
 
@@ -211,10 +219,10 @@ function parseAIResponse(content: string): OutreachResult {
 
   const getSection = (header: string) => {
     // Build a pattern that matches the header with optional markdown formatting
-    const escapedHeader = header.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const escapedHeader = header.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');
     const otherHeaders = headers
       .filter(h => h !== header)
-      .map(h => h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+      .map(h => h.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&'));
     
     // Match: optional ### or ** before the header, then capture until the next header or end
     const pattern = new RegExp(

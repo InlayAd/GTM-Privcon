@@ -39,7 +39,11 @@ export default function Home() {
     setLoading(true);
     setError(null);
     try {
-      const data = await generateOutreachAction(formData);
+      const response = await generateOutreachAction(formData);
+      if (!response.success || !response.data) {
+        throw new Error(response.error || 'Failed to generate brand intelligence.');
+      }
+      const data = response.data;
       setResult(data);
       // Auto-save the report
       const saved = saveReport(formData, data);
