@@ -49,9 +49,15 @@ export function useReportHistory() {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        setReports(JSON.parse(stored));
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setReports(parsed);
+        } else {
+          // If empty array, still seed with initial reports
+          setReports(INITIAL_REPORTS);
+        }
       } else {
-        // If empty, seed with initial reports
+        // If null (never visited), seed
         setReports(INITIAL_REPORTS);
       }
     } catch (err) {
