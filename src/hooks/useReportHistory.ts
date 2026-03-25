@@ -48,17 +48,21 @@ export function useReportHistory() {
   useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
+      let history: SavedReport[] = [];
+      
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setReports(parsed);
-        } else {
-          // If empty array, still seed with initial reports
-          setReports(INITIAL_REPORTS);
+        if (Array.isArray(parsed)) {
+          history = parsed;
         }
+      }
+
+      // ENSURE SEED: If the "Welcome" report isn't in history, add it!
+      const hasSeed = history.some(r => r.id === INITIAL_REPORTS[0].id);
+      if (!hasSeed) {
+        setReports([...INITIAL_REPORTS, ...history]);
       } else {
-        // If null (never visited), seed
-        setReports(INITIAL_REPORTS);
+        setReports(history);
       }
     } catch (err) {
       console.error('Failed to load saved reports:', err);
