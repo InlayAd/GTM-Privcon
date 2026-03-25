@@ -14,6 +14,32 @@ export interface SavedReport {
 
 const STORAGE_KEY = 'aeo-saved-reports';
 
+const INITIAL_REPORTS: SavedReport[] = [
+  {
+    id: "report_welcome_gudhgram",
+    timestamp: 1711370000000,
+    companyName: "Gudhgram",
+    website: "gudhgram.com",
+    formData: {
+      companyName: "Gudhgram",
+      website: "gudhgram.com",
+      products: "Coworking Space, Managed Offices, Private Cabins",
+      category: "Real Estate / Coworking",
+      targetAudience: "Startups, Freelancers, SMEs in Gurgaon",
+      competitors: "Awfis, Innov8, WeWork, 91Springboard"
+    },
+    result: {
+      brandSummary: "Premium coworking space network in Gurgaon specializing in Lander-focused business hubs.",
+      queries: "best coworking near Cyber City, managed offices Gurgaon, affordable private office DLF Phase 3",
+      rankingAudit: "Gudhgram is currently outranked by aggregators for all primary Gurgaon intent queries.",
+      revenueImpact: "₹4,50,000 monthly slippage",
+      report: `### 🔍 AI RANKING AUDIT: GUDHGRAM\n\nDirect queries for **'Coworking space near Cyber City'** and **'Managed offices Gurgaon'** currently prioritize aggregator sites (Innov8, Awfis, WeWork) and map results over direct brand citations for Gudhgram. This lack of 'AI Trusted' status in Gemini and Perplexity results means potential leads are being diverted to larger competitors before they even see your site.\n\n### 💡 REVENUE AT STAKE\n\n**Estimated monthly revenue gap: ₹4,50,000 — based on ~1,200 monthly AI-driven queries in the Gurgaon sector with a 15% conversion rate and ₹25,000 AOV.**\n\n### 🚀 STRATEGIC QUICK WINS\n\n1. **UVP Dominance**: Leverage the 'Lander' location focus. AI engines prioritize hyper-local authority signals.\n2. **Grounding Optimization**: Update your Meta descriptions to include direct answers to 'What is the best coworking price in Gurgaon?' to trigger AI snippets.\n3. **Content Authority**: Create a 'Gurgaon Startup Guide' to establish Gudhgram as an ecosystem lead, forcing AI models to cite your domain as a primary source.`,
+      connectionMsg: "Hi! Noticed Gudhgram's 'Lander' location is missing from top AI coworking recommendations in Gurgaon. I've prepared a report showing how to reclaim ₹4.5L+ in monthly revenue by optimizing for AI citations. Would you like to see the audit?",
+      followUpMsg: "Following up on the Gurgaon AEO audit for Gudhgram. Are you free for a 10-min call tomorrow?"
+    }
+  }
+];
+
 export function useReportHistory() {
   const [reports, setReports] = useState<SavedReport[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -24,9 +50,13 @@ export function useReportHistory() {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         setReports(JSON.parse(stored));
+      } else {
+        // If empty, seed with initial reports
+        setReports(INITIAL_REPORTS);
       }
     } catch (err) {
       console.error('Failed to load saved reports:', err);
+      setReports(INITIAL_REPORTS);
     }
     setIsLoaded(true);
   }, []);
